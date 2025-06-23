@@ -8,9 +8,19 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir) # This should be the project root if cli.py is in ai_code_platform
 # This script (cli.py) is intended to be in the `ai_code_platform` directory.
 # Imports are relative to this location.
-from llm_code_generator.llm_service import LLMService, LLMConfigurationError, LLMAPIError
-from llm_code_generator.claude_service import ClaudeService
-from llm_code_generator.local_llm_service import LocalLLMService
+from ai_code_platform.llm_code_generator.llm_service import (
+    LLMService,
+    LLMConfigurationError,
+    LLMAPIError,
+)
+from ai_code_platform.llm_code_generator.claude_service import ClaudeService
+from ai_code_platform.llm_code_generator.local_llm_service import LocalLLMService
+
+# Capture default values at import time so that tests patching the service
+# classes don't replace these with mocks.
+CLAUDE_DEFAULT_MODEL = ClaudeService.DEFAULT_MODEL
+LOCAL_DEFAULT_API_BASE = LocalLLMService.DEFAULT_API_BASE
+LOCAL_DEFAULT_MODEL = LocalLLMService.DEFAULT_MODEL
 
 
 def main():
@@ -32,20 +42,23 @@ def main():
     parser.add_argument(
         "--claude-model",
         type=str,
-        default=ClaudeService.DEFAULT_MODEL,
-        help=f"Claude model to use (e.g., claude-3-opus-20240229, claude-3-haiku-20240307). Default: {ClaudeService.DEFAULT_MODEL}",
+        default=CLAUDE_DEFAULT_MODEL,
+        help=(
+            "Claude model to use (e.g., claude-3-opus-20240229, "
+            f"claude-3-haiku-20240307). Default: {CLAUDE_DEFAULT_MODEL}"
+        ),
     )
     parser.add_argument(
         "--local-url",
         type=str,
-        default=LocalLLMService.DEFAULT_API_BASE,
-        help=f"Base URL for the local LLM API. Default: {LocalLLMService.DEFAULT_API_BASE}",
+        default=LOCAL_DEFAULT_API_BASE,
+        help=f"Base URL for the local LLM API. Default: {LOCAL_DEFAULT_API_BASE}",
     )
     parser.add_argument(
         "--local-model",
         type=str,
-        default=LocalLLMService.DEFAULT_MODEL,
-        help=f"Model name for the local LLM. Default: {LocalLLMService.DEFAULT_MODEL}",
+        default=LOCAL_DEFAULT_MODEL,
+        help=f"Model name for the local LLM. Default: {LOCAL_DEFAULT_MODEL}",
     )
     parser.add_argument(
         "--api-key",

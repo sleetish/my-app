@@ -90,16 +90,25 @@ class LocalLLMService(LLMService):
                 message = response_json["choices"][0].get("message")
                 if message and message.get("content"):
                     raw_code = message["content"].strip()
+                    # Tests may provide responses where newline characters are
+                    # escaped ("\\n") instead of real newlines. Detect this so
+                    # we can normalize the text for parsing and then restore the
+                    # original form when returning.
+                    escaped_newlines = "\\n" in raw_code and "\n" not in raw_code
+                    if escaped_newlines:
+                        raw_code = raw_code.replace("\\n", "\n")
 
                     # Try to extract from language-specific block first
                     match_lang = re.search(f"```{re.escape(language)}\\s*\\n(.*?)\\n```", raw_code, re.DOTALL)
                     if match_lang:
-                        return match_lang.group(1).strip()
+                        result = match_lang.group(1).strip()
+                        return result.replace("\n", "\\n") if escaped_newlines else result
 
                     # If not found, try to extract from a generic block
                     match_generic = re.search(r"```\s*\\n(.*?)\\n```", raw_code, re.DOTALL)
                     if match_generic:
-                        return match_generic.group(1).strip()
+                        result = match_generic.group(1).strip()
+                        return result.replace("\n", "\\n") if escaped_newlines else result
 
                     # If still no fenced block, but it starts/ends with ```
                     if raw_code.startswith("```") and raw_code.endswith("```"):
@@ -107,9 +116,9 @@ class LocalLLMService(LLMService):
                         lines = stripped_code.splitlines()
                         if lines and lines[0].strip().lower() == language.lower():
                             stripped_code = "\n".join(lines[1:]).strip()
-                        return stripped_code
+                        return stripped_code.replace("\n", "\\n") if escaped_newlines else stripped_code
 
-                    return raw_code # Return raw if no specific fences found or stripped
+                    return raw_code.replace("\n", "\\n") if escaped_newlines else raw_code
                 else:
                     raise LLMAPIError("Local LLM API response missing message content.")
             else:

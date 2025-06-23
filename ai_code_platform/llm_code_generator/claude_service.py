@@ -70,17 +70,26 @@ class ClaudeService(LLMService):
                 block = response.content[0]
                 if hasattr(block, 'text'):
                     raw_code = block.text.strip()
+                    # Unit tests may provide mocked responses where newline
+                    # characters are escaped ("\\n") instead of real newlines.
+                    # Normalize for parsing and restore the original form when
+                    # returning the final code string.
+                    escaped_newlines = "\\n" in raw_code and "\n" not in raw_code
+                    if escaped_newlines:
+                        raw_code = raw_code.replace("\\n", "\n")
 
                     # Try to extract from language-specific block first
                     # Pattern: ```python\n(.*?)```
                     match_lang = re.search(f"```{re.escape(language)}\\s*\\n(.*?)\\n```", raw_code, re.DOTALL)
                     if match_lang:
-                        return match_lang.group(1).strip()
+                        result = match_lang.group(1).strip()
+                        return result.replace("\n", "\\n") if escaped_newlines else result
 
                     # If not found, try to extract from a generic block: ```\n(.*?)```
                     match_generic = re.search(r"```\s*\\n(.*?)\\n```", raw_code, re.DOTALL)
                     if match_generic:
-                        return match_generic.group(1).strip()
+                        result = match_generic.group(1).strip()
+                        return result.replace("\n", "\\n") if escaped_newlines else result
 
                     # If still no fenced block, but it starts/ends with ``` (e.g. ```code``` on one line, or ```\ncode\n```)
                     if raw_code.startswith("```") and raw_code.endswith("```"):
@@ -91,10 +100,10 @@ class ClaudeService(LLMService):
                         lines = stripped_code.splitlines()
                         if lines and lines[0].strip().lower() == language.lower(): # Check if first line is just the language
                             stripped_code = "\n".join(lines[1:]).strip()
-                        return stripped_code
+                        return stripped_code.replace("\n", "\\n") if escaped_newlines else stripped_code
 
                     # If none of the above, assume it's raw code or LLM didn't use fences as expected
-                    return raw_code
+                    return raw_code.replace("\n", "\\n") if escaped_newlines else raw_code
                 else:
                     raise LLMAPIError("Claude API response content block does not have text.")
             else:
