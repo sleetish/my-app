@@ -119,11 +119,11 @@ def test_claude_service_generate_code_with_markdown_stripping(mock_anthropic_con
 
 
 @pytest.mark.parametrize("anthropic_exception_class, mock_args_tuple, expected_llm_error, error_message_detail", [
-    (APIConnectionError, ({"message": "Connection failed.", "request": MagicMock()}), LLMAPIError, "Claude API connection error"),
-    (RateLimitError, ({"message": "Rate limit.", "response": MagicMock(), "body": None}), LLMAPIError, "Claude API rate limit exceeded"),
-    (APIStatusError, ({"message": "Server Error.", "response": MagicMock(status_code=500), "body": None}), LLMAPIError, "Claude API status error (status 500)"),
-    (APIError, ({"message":"Some API error", "request": MagicMock()}), LLMAPIError, "An unexpected error occurred while calling Claude API"), # General Anthropic APIError
-    (Exception, (("Some other unexpected error",),), LLMAPIError, "An unexpected error occurred while calling Claude API") # General non-Anthropic exception
+    (APIConnectionError, ({"message": "Connection failed.", "request": MagicMock()},), LLMAPIError, "Claude API connection error"),
+    (RateLimitError, ({"message": "Rate limit.", "response": MagicMock(), "body": None},), LLMAPIError, "Claude API rate limit exceeded"),
+    (APIStatusError, ({"message": "Server Error.", "response": MagicMock(status_code=500), "body": None},), LLMAPIError, "Claude API status error (status 500)"),
+    (APIError, ({"message": "Some API error", "request": MagicMock(), "body": None},), LLMAPIError, "An unexpected error occurred while calling Claude API"),  # General Anthropic APIError
+    (Exception, (("Some other unexpected error",),), LLMAPIError, "An unexpected error occurred while calling Claude API")  # General non-Anthropic exception
 ])
 def test_claude_service_generate_code_api_errors(mock_anthropic_constructor, anthropic_exception_class, mock_args_tuple, expected_llm_error, error_message_detail):
     """Test various API errors during code generation."""
